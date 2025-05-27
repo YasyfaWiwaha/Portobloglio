@@ -1,10 +1,61 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Portobloglio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portobloglio</title>
+
+  {{ if .CSSPath }}
+  <link rel="stylesheet" href="{{ .CSSPath }}" />
+  {{ end }}
+
 </head>
 <body>
-    <h1>Hello, world!!</h1>
-    <p>{{ .Greeting }}</p>
+  <header>
+    <div class="logo">MySite</div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/projects">Projects</a>
+      <a href="/blog">Blog</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <section>
+    <h2>HTMX Demo</h2>
+    <button 
+      hx-get="/boom" 
+      hx-target="#popup" 
+      hx-swap="innerHTML">
+      Trigger BOOM!
+    </button>
+    <div id="popup"></div>
+  </section>
+
+  <main class="container">
+    <h1>Welcome to My Website</h1>
+    <p>This is a placeholder for your personal introduction. You can describe who you are, what you do, or what this site is about.</p>
+
+    <section>
+      <h2>Featured Project</h2>
+      <p>Here is a featured project. You could include a screenshot, a short description, and a link to the source or demo.</p>
+    </section>
+
+    <section>
+      <h2>Recent Blog Post</h2>
+      <p>This is a short excerpt of a recent blog post. You'll link this to the full article in your blog section.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 My Name. All rights reserved.</p>
+  </footer>
+
+  <!-- HTMX -->
+  {{ if .HTMXPath }}
+  <script src="{{ .HTMXPath }}"></script>
+  {{ end }}
+
 </body>
 </html>
