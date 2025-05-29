@@ -1,0 +1,25 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #202427;
+}
+
+.first {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #E12885;
+}
+
+.second {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

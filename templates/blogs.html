@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Portobloglio</title>
+  <title> Blogs </title>
 
   {{ if .GlobalCSSPath }}
   <link rel="stylesheet" href="{{ .GlobalCSSPath }}" />
@@ -12,19 +11,11 @@
   {{ if .PageCSSPath }}
   <link rel="stylesheet" href="{{ .PageCSSPath }}" />
   {{ end }}
-
 </head>
 <body>
-  <section class="first">
-      <h1> Portobloglio </h1>
+  <section class="">
+      <h1> Blogs </h1>
   </section>
-
-  <section class="second">
-    <a href="/projects" class="button-link projects"> Projects </a>
-    <a href="/blogs" class="button-link blogs"> Blogs </a>
-    <a href="/about" class="button-link about"> about </a>
-  </section>
-
   <!-- HTMX -->
   {{ if .HTMXPath }}
   <script src="{{ .HTMXPath }}"></script>

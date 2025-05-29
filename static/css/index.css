@@ -1,0 +1,14 @@
+.first {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #E12885;
+  }
+  
+  .second {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }

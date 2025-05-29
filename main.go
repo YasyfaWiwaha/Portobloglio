@@ -1,15 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var tmpl = template.Must(template.ParseFiles("templates/index.html"))
+var templates = template.Must(template.ParseGlob("templates/*.html"))
+
 var db *sql.DB
+
+type PageData struct {
+	GlobalCSSPath string
+	PageCSSPath   string
+	HTMXPath      string
+}
 
 func init() {
 	var err error
@@ -19,35 +29,60 @@ func init() {
 	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	data := struct{ 
-		Greeting string 
-		CSSPath string
-		HTMXPath string
-		}{
-			Greeting: "Hey Boss!!!",
-			CSSPath: "static/css/styles.css",
-			HTMXPath: "static/scripts/htmx.min.js",
-		}
-	err := tmpl.Execute(w, data)
+func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
+	var buf bytes.Buffer
+	err := templates.ExecuteTemplate(&buf, name, data)
 	if err != nil {
+		log.Printf("Template rendering error for %s: %v", name, err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
-		return
 	}
+	buf.WriteTo(w)
 }
 
-func boomHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, `<div style="padding: 1rem; background: #ffc; border: 2px solid #fa0; margin-top: 1rem;">💥 BOOM!</div>`)
+func landingHandler(w http.ResponseWriter, r *http.Request) {
+	data := PageData{
+		GlobalCSSPath: "static/css/global.css",
+		PageCSSPath:   "static/css/index.css",
+		HTMXPath:      "static/scripts/htmx.min.js",
+	}
+	renderTemplate(w, "index.html", data)
 }
 
+func blogsHandler(w http.ResponseWriter, r *http.Request) {
+	data := PageData{
+		GlobalCSSPath: "static/css/global.css",
+		PageCSSPath:   "static/css/blogs.css",
+		HTMXPath:      "static/scripts/htmx.min.js",
+	}
+	renderTemplate(w, "blogs.html", data)
+}
+
+func projectsHandler(w http.ResponseWriter, r *http.Request) {
+	data := PageData{
+		GlobalCSSPath: "static/css/global.css",
+		PageCSSPath:   "static/css/projects.css",
+		HTMXPath:      "static/scripts/htmx.min.js",
+	}
+	renderTemplate(w, "projects.html", data)
+}
+
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	data := PageData{
+		GlobalCSSPath: "static/css/global.css",
+		PageCSSPath:   "static/css/about.css",
+		HTMXPath:      "static/scripts/htmx.min.js",
+	}
+	renderTemplate(w, "about.html", data)
+}
 
 func main() {
 	defer db.Close()
-	
+
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/boom", boomHandler)
+	http.HandleFunc("/", landingHandler)
+	http.HandleFunc("/blogs", blogsHandler)
+	http.HandleFunc("/projects", projectsHandler)
+	http.HandleFunc("/about", aboutHandler)
 
 	fmt.Println("Server listening on port 5050")
 	err := http.ListenAndServe(":5050", nil)
