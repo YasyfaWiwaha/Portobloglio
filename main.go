@@ -15,7 +15,7 @@ var templates = template.Must(template.ParseGlob("templates/*.html"))
 
 var db *sql.DB
 
-type PageData struct {
+type BaseData struct {
 	GlobalCSSPath string
 	PageCSSPath   string
 	HTMXPath      string
@@ -40,7 +40,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 }
 
 func landingHandler(w http.ResponseWriter, r *http.Request) {
-	data := PageData{
+	data := BaseData{
 		GlobalCSSPath: "static/css/global.css",
 		PageCSSPath:   "static/css/index.css",
 		HTMXPath:      "static/scripts/htmx.min.js",
@@ -49,7 +49,7 @@ func landingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func blogsHandler(w http.ResponseWriter, r *http.Request) {
-	data := PageData{
+	data := BaseData{
 		GlobalCSSPath: "static/css/global.css",
 		PageCSSPath:   "static/css/blogs.css",
 		HTMXPath:      "static/scripts/htmx.min.js",
@@ -57,22 +57,23 @@ func blogsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "blogs.html", data)
 }
 
-func projectsHandler(w http.ResponseWriter, r *http.Request) {
-	data := PageData{
-		GlobalCSSPath: "static/css/global.css",
-		PageCSSPath:   "static/css/projects.css",
-		HTMXPath:      "static/scripts/htmx.min.js",
-	}
-	renderTemplate(w, "projects.html", data)
-}
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	data := PageData{
+	data := BaseData{
 		GlobalCSSPath: "static/css/global.css",
 		PageCSSPath:   "static/css/about.css",
 		HTMXPath:      "static/scripts/htmx.min.js",
 	}
 	renderTemplate(w, "about.html", data)
+}
+
+func projectsHandler(w http.ResponseWriter, r *http.Request) {
+	data := BaseData{
+		GlobalCSSPath: "/static/css/global.css",
+		PageCSSPath:   "/static/css/projects.css",
+		HTMXPath:      "/static/scripts/htmx.min.js",
+	}
+	renderTemplate(w, "projects.html", data)
 }
 
 func main() {

@@ -1,26 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title> Projects </title>
+{{ define "title" }}Projects{{ end }}
 
-  {{ if .GlobalCSSPath }}
-  <link rel="stylesheet" href="{{ .GlobalCSSPath }}" />
+{{ define "content" }}
+<h1>My Projects</h1>
+<div class="project-grid">
+  {{ range .Projects }}
+  <div class="project-card">
+    <a href="{{ .URL }}" target="_blank">
+      <iframe src="{{ .URL }}" loading="lazy" class="preview"></iframe>
+      <h3>{{ .Title }}</h3>
+      <p>{{ .Description }}</p>
+    </a>
+  </div>
   {{ end }}
-  {{ if .PageCSSPath }}
-  <link rel="stylesheet" href="{{ .PageCSSPath }}" />
-  {{ end }}
-
-</head>
-<body>
-  <section class="">
-      <h1> Projects </h1>
-  </section>
-  <!-- HTMX -->
-  {{ if .HTMXPath }}
-  <script src="{{ .HTMXPath }}"></script>
-  {{ end }}
-
-</body>
-</html>
+</div>
+{{ end }}

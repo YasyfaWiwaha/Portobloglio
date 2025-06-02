@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ block "title" . }}My Site{{ end }}</title>
+  {{ if .GlobalCSSPath }}<link rel="stylesheet" href="{{ .GlobalCSSPath }}">{{ end }}
+  {{ if .PageCSSPath }}<link rel="stylesheet" href="{{ .PageCSSPath }}">{{ end }}
+  {{ if .HTMXPath }}<script src="{{ .HTMXPath }}"></script>{{ end }}
+</head>
+<body>
+  {{ block "content" . }}{{ end }}
+</body>
+</html>
