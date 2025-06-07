@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -21,12 +22,50 @@ type BaseData struct {
 	HTMXPath      string
 }
 
+type Project struct {
+	URL         string
+	Title       string
+	Description string
+}
+
+type Blogs struct {
+	Id        []byte
+	Title     string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type ProjectsData struct {
+	BaseData
+	Projects []Project
+}
+
 func init() {
 	var err error
 	db, err = sql.Open("sqlite3", "db/portobloglio.db")
 	if err != nil {
 		panic("failed to open database: " + err.Error())
 	}
+}
+
+func getAllProjects() ([]Project, error) {
+	rows, err := db.Query("SELECT * FROM projects")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var projects []Project
+	for rows.Next() {
+		var p Project
+		err := rows.Scan(&p.URL, &p.Title, &p.Description)
+		if err != nil {
+			return nil, err
+		}
+		projects = append(projects, p)
+	}
+	return projects, nil
 }
 
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
@@ -57,6 +96,22 @@ func blogsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "blogs.html", data)
 }
 
+func projectsHandler(w http.ResponseWriter, r *http.Request) {
+	projects, err := getAllProjects()
+	if err != nil {
+		http.Error(w, "Failed to load projects", http.StatusInternalServerError)
+		return
+	}
+	data := ProjectsData{
+		BaseData: BaseData{
+			GlobalCSSPath: "/static/css/global.css",
+			PageCSSPath:   "/static/css/projects.css",
+			HTMXPath:      "/static/scripts/htmx.min.js",
+		},
+		Projects: projects,
+	}
+	renderTemplate(w, "base.html", data)
+}
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	data := BaseData{
@@ -65,15 +120,6 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		HTMXPath:      "static/scripts/htmx.min.js",
 	}
 	renderTemplate(w, "about.html", data)
-}
-
-func projectsHandler(w http.ResponseWriter, r *http.Request) {
-	data := BaseData{
-		GlobalCSSPath: "/static/css/global.css",
-		PageCSSPath:   "/static/css/projects.css",
-		HTMXPath:      "/static/scripts/htmx.min.js",
-	}
-	renderTemplate(w, "projects.html", data)
 }
 
 func main() {
