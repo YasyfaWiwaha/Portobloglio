@@ -1,25 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title> Blogs </title>
+{{ define "blogs" }}
 
-  {{ if .GlobalCSSPath }}
-  <link rel="stylesheet" href="{{ .GlobalCSSPath }}" />
-  {{ end }}
-  {{ if .PageCSSPath }}
-  <link rel="stylesheet" href="{{ .PageCSSPath }}" />
-  {{ end }}
+{{ template "base_head"}}
+<title>All Blogs</title>
 </head>
+
 <body>
-  <section class="">
-      <h1> Blogs </h1>
-  </section>
-  <!-- HTMX -->
-  {{ if .HTMXPath }}
-  <script src="{{ .HTMXPath }}"></script>
+  {{ range .Blogs }}
+  <div class="blog-entry">
+    <a href="/blogs/{{ .Id }}">{{ .Title }}</a>
+  </div>
+  {{ else }}
+  <p>No blog posts found.</p>
   {{ end }}
 
-</body>
-</html>
+{{ template "base_footer"}}
+
+{{ end }}

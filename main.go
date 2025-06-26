@@ -28,17 +28,34 @@ type Project struct {
 	Description string
 }
 
-type Blogs struct {
-	Id        []byte
+type Blog struct {
+	Id        string
 	Title     string
 	Content   string
+	Category  Category
+	Tags      []Tag
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type Category struct {
+	ID   string
+	Name string
+}
+
+type Tag struct {
+	ID   string
+	Name string
 }
 
 type ProjectsData struct {
 	BaseData
 	Projects []Project
+}
+
+type BlogsData struct {
+	BaseData
+	Blogs []Blog
 }
 
 func init() {
@@ -68,6 +85,26 @@ func getAllProjects() ([]Project, error) {
 	return projects, nil
 }
 
+func getAllBlogs() ([]Blog, error) {
+	rows, err := db.Query("SELECT id, title, content, created_at, updated_at FROM blogs")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var blogs []Blog
+	for rows.Next() {
+		var b Blog
+		err := rows.Scan(&b.Id, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		b.Id = fmt.Sprintf("%x", b.Id)
+		blogs = append(blogs, b)
+	}
+	return blogs, nil
+}
+
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 	var buf bytes.Buffer
 	err := templates.ExecuteTemplate(&buf, name, data)
@@ -88,12 +125,19 @@ func landingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func blogsHandler(w http.ResponseWriter, r *http.Request) {
-	data := BaseData{
-		GlobalCSSPath: "static/css/global.css",
-		PageCSSPath:   "static/css/blogs.css",
-		HTMXPath:      "static/scripts/htmx.min.js",
+	blogs, err := getAllBlogs()
+	if err != nil {
+		http.Error(w, "Failed to load blogs", http.StatusInternalServerError)
 	}
-	renderTemplate(w, "blogs.html", data)
+	data := BlogsData{
+		BaseData: BaseData{
+			GlobalCSSPath: "/static/css/global.css",
+			PageCSSPath:   "/static/css/projects.css",
+			HTMXPath:      "/static/scripts/htmx.min.js",
+		},
+		Blogs: blogs,
+	}
+	renderTemplate(w, "blogs", data)
 }
 
 func projectsHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +154,7 @@ func projectsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		Projects: projects,
 	}
-	renderTemplate(w, "base.html", data)
+	renderTemplate(w, "projects", data)
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {

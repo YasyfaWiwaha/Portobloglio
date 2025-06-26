@@ -1,16 +1,23 @@
-{{ define "title" }}Projects{{ end }}
+{{ define "projects" }}
+  {{ template "base_head"}}
+  <title>Projects</title>
+  </head>
 
-{{ define "content" }}
-<h1>My Projects</h1>
-<div class="project-grid">
-  {{ range .Projects }}
-  <div class="project-card">
-    <a href="{{ .URL }}" target="_blank">
-      <iframe src="{{ .URL }}" loading="lazy" class="preview"></iframe>
-      <h3>{{ .Title }}</h3>
-      <p>{{ .Description }}</p>
-    </a>
+  <body>
+  <h1>My Projects</h1>
+  <div class="project-grid">
+    {{ range .Projects }}
+    <div class="project-card">
+      <a href="{{ .URL }}" target="_blank">
+        <iframe src="{{ .URL }}" loading="lazy" class="preview"></iframe>
+        <h3>{{ .Title }}</h3>
+        <p>{{ .Description }}</p>
+      </a>
+    </div>
+    {{ end }}
   </div>
-  {{ end }}
-</div>
+
+
+{{ template "base_footer"}}
+
 {{ end }}
