@@ -1,0 +1,17 @@
+{{ define "blog-details" }}
+
+{{ template "base_head"}}
+<title>{{.Content.Title}} </title>
+</head>
+
+<body>
+
+<div class="blog_title">
+    <h1> {{.Content.Title}} </h1>
+</div>
+
+<div class="date">
+</div>
+{{ template "base_footer"}}
+
+{{ end }}

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -15,12 +16,6 @@ import (
 var templates = template.Must(template.ParseGlob("templates/*.html"))
 
 var db *sql.DB
-
-type BaseData struct {
-	GlobalCSSPath string
-	PageCSSPath   string
-	HTMXPath      string
-}
 
 type Project struct {
 	URL         string
@@ -48,14 +43,25 @@ type Tag struct {
 	Name string
 }
 
-type ProjectsData struct {
-	BaseData
-	Projects []Project
+type PageData struct {
+	GlobalCSSPath string
+	PageCSSPath   string
+	HTMXPath      string
+	Content       any
 }
 
-type BlogsData struct {
-	BaseData
-	Blogs []Blog
+func newPageData(pageCssPath string, content any) PageData {
+	pageCSS := ""
+	if pageCssPath != "" {
+		pageCSS = fmt.Sprintf("/static/css/%s.css", pageCssPath)
+	}
+
+	return PageData{
+		GlobalCSSPath: "/static/css/global.css",
+		PageCSSPath:   pageCSS,
+		HTMXPath:      "/static/scripts/htmx.min.js",
+		Content:       content,
+	}
 }
 
 func init() {
@@ -105,6 +111,21 @@ func getAllBlogs() ([]Blog, error) {
 	return blogs, nil
 }
 
+func getBlogByID(id string) (Blog, error) {
+	var b Blog
+	idBytes := []byte(id)
+
+	err := db.QueryRow("SELECT id, title, content, created_at, updated_at FROM blogs WHERE id=?", idBytes).Scan(&b.Id, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
+
+	if err != nil {
+
+	}
+	if err == sql.ErrNoRows {
+		return b, nil // or return a custom "not found" error
+	}
+	return b, nil
+}
+
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 	var buf bytes.Buffer
 	err := templates.ExecuteTemplate(&buf, name, data)
@@ -116,11 +137,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 }
 
 func landingHandler(w http.ResponseWriter, r *http.Request) {
-	data := BaseData{
-		GlobalCSSPath: "static/css/global.css",
-		PageCSSPath:   "static/css/index.css",
-		HTMXPath:      "static/scripts/htmx.min.js",
-	}
+	data := newPageData("", nil)
 	renderTemplate(w, "index.html", data)
 }
 
@@ -129,15 +146,23 @@ func blogsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to load blogs", http.StatusInternalServerError)
 	}
-	data := BlogsData{
-		BaseData: BaseData{
-			GlobalCSSPath: "/static/css/global.css",
-			PageCSSPath:   "/static/css/projects.css",
-			HTMXPath:      "/static/scripts/htmx.min.js",
-		},
-		Blogs: blogs,
-	}
+	data := newPageData("blogs", blogs)
 	renderTemplate(w, "blogs", data)
+}
+
+func blogDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/blogs/")
+	if id == "" {
+		http.Redirect(w, r, "/blogs", http.StatusFound)
+		return
+	}
+	blog, err := getBlogByID(id)
+	if err != nil {
+		http.Error(w, "Failed to load blog", http.StatusInternalServerError)
+	}
+	data := newPageData("", blog) // TODO:
+	fmt.Println(blog)
+	renderTemplate(w, "blog-details", data)
 }
 
 func projectsHandler(w http.ResponseWriter, r *http.Request) {
@@ -146,23 +171,12 @@ func projectsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to load projects", http.StatusInternalServerError)
 		return
 	}
-	data := ProjectsData{
-		BaseData: BaseData{
-			GlobalCSSPath: "/static/css/global.css",
-			PageCSSPath:   "/static/css/projects.css",
-			HTMXPath:      "/static/scripts/htmx.min.js",
-		},
-		Projects: projects,
-	}
+	data := newPageData("projects", projects)
 	renderTemplate(w, "projects", data)
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	data := BaseData{
-		GlobalCSSPath: "static/css/global.css",
-		PageCSSPath:   "static/css/about.css",
-		HTMXPath:      "static/scripts/htmx.min.js",
-	}
+	data := newPageData("", nil)
 	renderTemplate(w, "about.html", data)
 }
 
@@ -172,6 +186,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", landingHandler)
 	http.HandleFunc("/blogs", blogsHandler)
+	http.HandleFunc("/blogs/", blogDetailsHandler)
 	http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/about", aboutHandler)
 
