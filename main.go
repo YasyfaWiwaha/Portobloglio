@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
@@ -91,6 +92,32 @@ func getAllProjects() ([]Project, error) {
 	return projects, nil
 }
 
+func formatUUID(b []byte) (string, error) {
+	if len(b) != 16 {
+		return "", fmt.Errorf("invalid UUID length: %d", len(b))
+	}
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		uint32(b[0])<<24|uint32(b[1])<<16|uint32(b[2])<<8|uint32(b[3]),
+		uint16(b[4])<<8|uint16(b[5]),
+		uint16(b[6])<<8|uint16(b[7]),
+		uint16(b[8])<<8|uint16(b[9]),
+		b[10:]), nil
+}
+
+func parseUUID(uuidStr string) ([]byte, error) {
+	clean := strings.ReplaceAll(uuidStr, "-", "")
+	if len(clean) != 32 {
+		return nil, fmt.Errorf("invalid UUID length: %d", len(clean))
+	}
+
+	bytes, err := hex.DecodeString(clean)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode UUID hex: %w", err)
+	}
+
+	return bytes, nil
+}
+
 func getAllBlogs() ([]Blog, error) {
 	rows, err := db.Query("SELECT id, title, content, created_at, updated_at FROM blogs")
 	if err != nil {
@@ -100,28 +127,46 @@ func getAllBlogs() ([]Blog, error) {
 
 	var blogs []Blog
 	for rows.Next() {
+		var rawID []byte
 		var b Blog
-		err := rows.Scan(&b.Id, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
+
+		err := rows.Scan(&rawID, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
-		b.Id = fmt.Sprintf("%x", b.Id)
+		fmt.Print("Raw Id: ")
+		fmt.Println(rawID)
+
+		b.Id, err = formatUUID(rawID)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Print("Blog Id: ")
+		fmt.Println(b.Id)
+
 		blogs = append(blogs, b)
 	}
+
 	return blogs, nil
 }
 
 func getBlogByID(id string) (Blog, error) {
 	var b Blog
-	idBytes := []byte(id)
+	idBytes, err := parseUUID(id)
+	if err != nil {
+		return Blog{}, fmt.Errorf("invalid uuid: %w", err)
+	}
 
-	err := db.QueryRow("SELECT id, title, content, created_at, updated_at FROM blogs WHERE id=?", idBytes).Scan(&b.Id, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
+	err = db.QueryRow(
+		"SELECT id, title, content, created_at, updated_at FROM blogs WHERE id=?", idBytes).
+		Scan(&b.Id, &b.Title, &b.Content, &b.CreatedAt, &b.UpdatedAt)
 
 	if err != nil {
-
-	}
-	if err == sql.ErrNoRows {
-		return b, nil // or return a custom "not found" error
+		if err == sql.ErrNoRows {
+			return Blog{}, fmt.Errorf("Blog not found! %w", err)
+		}
+		return Blog{}, fmt.Errorf("query failed! %w", err)
 	}
 	return b, nil
 }
