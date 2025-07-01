@@ -1,6 +1,6 @@
 {{ define "blogs" }}
 
-{{ template "base_head"}}
+{{ template "base_head" . }}
 <title>All Blogs</title>
 </head>
 
@@ -13,6 +13,6 @@
   <p>No blog posts found.</p>
   {{ end }}
 
-{{ template "base_footer"}}
+{{ template "base_footer" .}}
 
 {{ end }}

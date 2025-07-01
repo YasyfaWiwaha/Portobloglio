@@ -1,18 +1,23 @@
 {{ define "blog-details" }}
 
-{{ template "base_head"}}
+{{ template "base_head" . }}
 <title>{{.Content.Title}} </title>
 </head>
 
 <body>
 
 <div class="blog_title">
-    <h1> {{.Content.Title}} </h1>
+    <h1> {{.Content.Blog.Title}} </h1>
 </div>
 
 <div class="date">
-    <p> {{.Content.CreatedAt}} </p>
+    <p> {{.Content.Blog.CreatedAt}} </p>
 </div>
-{{ template "base_footer"}}
+
+<div class="blog-body">
+    {{ .Content.HTML }}
+</div>
+
+{{ template "base_footer" . }}
 
 {{ end }}

@@ -11,7 +11,10 @@ import (
 	"strings"
 	"time"
 
+	// markdown rendering
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
@@ -118,6 +121,21 @@ func parseUUID(uuidStr string) ([]byte, error) {
 	return bytes, nil
 }
 
+func parseMarkDown(source string) (template.HTML, error) {
+	md := goldmark.New(
+		goldmark.WithRendererOptions(
+			html.WithHardWraps(),
+		),
+	)
+	var buf bytes.Buffer
+
+	err := md.Convert([]byte(source), &buf)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(buf.String()), nil
+}
+
 func getAllBlogs() ([]Blog, error) {
 	rows, err := db.Query("SELECT id, title, content, created_at, updated_at FROM blogs")
 	if err != nil {
@@ -134,16 +152,11 @@ func getAllBlogs() ([]Blog, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Print("Raw Id: ")
-		fmt.Println(rawID)
 
 		b.Id, err = formatUUID(rawID)
 		if err != nil {
 			return nil, err
 		}
-
-		fmt.Print("Blog Id: ")
-		fmt.Println(b.Id)
 
 		blogs = append(blogs, b)
 	}
@@ -182,7 +195,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 }
 
 func landingHandler(w http.ResponseWriter, r *http.Request) {
-	data := newPageData("", nil)
+	data := newPageData("index", nil)
 	renderTemplate(w, "index.html", data)
 }
 
@@ -205,8 +218,22 @@ func blogDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to load blog", http.StatusInternalServerError)
 	}
-	data := newPageData("", blog) // TODO:
-	fmt.Println(blog)
+
+	htmlContent, err := parseMarkDown(blog.Content)
+	if err != nil {
+		http.Error(w, "Failed to render blog markdown", http.StatusInternalServerError)
+		return
+	}
+
+	view := struct {
+		Blog
+		HTML template.HTML
+	}{
+		Blog: blog,
+		HTML: htmlContent,
+	}
+
+	data := newPageData("blog_details", view)
 	renderTemplate(w, "blog-details", data)
 }
 
