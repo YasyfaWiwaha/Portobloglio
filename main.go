@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"html/template"
@@ -15,6 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/renderer/html"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
@@ -52,6 +55,12 @@ type PageData struct {
 	PageCSSPath   string
 	HTMXPath      string
 	Content       any
+}
+
+type User struct {
+	Username string
+	IsAdmin  bool
+	Password []byte
 }
 
 func newPageData(pageCssPath string, content any) PageData {
@@ -184,6 +193,47 @@ func getBlogByID(id string) (Blog, error) {
 	return b, nil
 }
 
+func getUser(username string) (User, error) {
+	var u User
+	err := db.QueryRow("Select * FROM users WHERE username=?", username).
+		Scan(&u.Username, &u.IsAdmin, &u.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return User{}, fmt.Errorf("user not found! %w", err)
+		}
+		return User{}, fmt.Errorf("query failed! %w", err)
+	}
+	return u, nil
+}
+
+func hashPassword(password []byte) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	if err != nil {
+		return "ERROR!", fmt.Errorf("error hashing password. %w", err)
+	}
+	return string(bytes), err
+}
+
+func checkPassword(hash, password []byte) bool {
+	err := bcrypt.CompareHashAndPassword(hash, password)
+	return err == nil
+}
+
+func generateSessionToken(username string) (string, error) {
+	b := make([]byte, 32) // 256 bit
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	token := base64.URLEncoding.EncodeToString(b)
+
+	_, err = db.Exec("INSERT INTO sessions (token, username, expired_at) VALUES (?, ?, ?);", token, username, time.Now().Add(8*time.Hour))
+	if err != nil {
+		return "", fmt.Errorf("error inserting session token! %w", err)
+	}
+	return token, nil
+}
+
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 	var buf bytes.Buffer
 	err := templates.ExecuteTemplate(&buf, name, data)
@@ -252,15 +302,62 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "about.html", data)
 }
 
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		errorMessage := r.URL.Query().Get("error")
+
+		data := newPageData("login", errorMessage)
+		renderTemplate(w, "login.html", data)
+	}
+
+	if r.Method == http.MethodPost {
+
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		}
+		username := r.FormValue("username")
+		pw := []byte(r.FormValue("password"))
+
+		user, err := getUser(username)
+		if err != nil {
+			http.Redirect(w, r, "/secret-admin-page-pls-dont-hack-me?error=invalid_credentials", http.StatusSeeOther)
+			return
+		}
+
+		valid := checkPassword([]byte(user.Password), pw)
+
+		if !valid {
+			http.Redirect(w, r, "/secret-admin-page-pls-dont-hack-me?error=invalid_credentials", http.StatusSeeOther)
+			return
+		}
+		var token string
+		token, err = generateSessionToken(username)
+		if err != nil {
+			http.Error(w, "error generating token session", http.StatusInternalServerError)
+			return
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     "Session",
+			Value:    token,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteStrictMode,
+			Expires:  time.Now().Add(8 * time.Hour),
+		})
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
 func main() {
 	defer db.Close()
-
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", landingHandler)
 	http.HandleFunc("/blogs", blogsHandler)
 	http.HandleFunc("/blogs/", blogDetailsHandler)
 	http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/about", aboutHandler)
+	http.HandleFunc("/secret-admin-page-pls-dont-hack-me", loginHandler)
 
 	fmt.Println("Server listening on port 5050")
 	err := http.ListenAndServe(":5050", nil)

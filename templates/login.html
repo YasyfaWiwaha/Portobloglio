@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="/static/css/login.css" />
+</head>
+<body>
+  <div class="login-container">
+
+    {{if .Content}}
+      <p style="color: red;">{{.Content}}</p>
+    {{end}}
+    <form class="login-form" method="POST" action="/secret-admin-page-pls-dont-hack-me">
+      <h2>Definitely not an admin login</h2>
+      <h6> pls  don't break my site : ) </h6>
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required />
+
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>
