@@ -349,8 +349,29 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func sessionCleanupLoop(db *sql.DB, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+
+	cleanExpiredSessions(db) // Clean up on startup
+
+	defer ticker.Stop()
+	for range ticker.C {
+		fmt.Println("loop")
+		cleanExpiredSessions(db)
+	}
+}
+
+func cleanExpiredSessions(db *sql.DB) {
+	_, err := db.Exec(`DELETE FROM sessions WHERE expired_at < CURRENT_TIMESTAMP`)
+	if err != nil {
+		log.Printf("Session cleanup error: %v", err)
+	}
+	fmt.Println("cleaned expiread sessions")
+}
+
 func main() {
 	defer db.Close()
+	go sessionCleanupLoop(db, time.Hour)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", landingHandler)
 	http.HandleFunc("/blogs", blogsHandler)
