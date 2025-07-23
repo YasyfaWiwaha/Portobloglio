@@ -193,7 +193,6 @@ func getBlogByID(id string) (Blog, error) {
 	return b, nil
 }
 
-func registerUser
 
 func getUser(username string) (User, error) {
 	var u User

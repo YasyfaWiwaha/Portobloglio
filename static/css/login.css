@@ -65,3 +65,41 @@ body {
 .login-form button:hover {
   background-color: #A2F8F5;
 }
+
+.password-wrapper {
+  position: relative;
+  display: block; 
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px;
+  box-sizing: border-box;
+}
+
+.login-form .eye-btn,
+.login-form .eye-btn:hover,
+.login-form .eye-btn:focus,
+.login-form .eye-btn:active {
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  right: 12px; /* Increased from 8px for better spacing */
+  top: 50%;
+  transform: translateY(-80%);
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex; /* Better centering */
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-btn img {
+  width: 20px; /* Slightly smaller than container */
+  height: 20px;
+  object-fit: contain;
+  pointer-events: none; /* Prevent image from interfering with clicks */
+}

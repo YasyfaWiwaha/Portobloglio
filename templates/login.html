@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
   <link rel="stylesheet" href="/static/css/login.css" />
+  <script src="/static/scripts/login.js"></script>
 </head>
 <body>
   <div class="login-container">
@@ -19,7 +20,15 @@
       <input type="text" id="username" name="username" required />
 
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" required />
+      <div class="password-wrapper">
+        <input type="password" id="password" name="password" />
+        <button type="button" class="eye-btn"
+                onmousedown="showPassword()" 
+                onmouseup="hidePassword()" 
+                onmouseleave="hidePassword()">
+          <img id="eye-icon" src="/static/svgs/eye-closed.svg">
+        </button>
+      </div>
 
       <button type="submit">Login</button>
     </form>
