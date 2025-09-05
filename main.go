@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"portobloglio/handlers"
+	"portobloglio/middlewares"
+	"portobloglio/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,13 +22,13 @@ func init() {
 	if err != nil {
 		panic("failed to open database: " + err.Error())
 	}
+	models.SetDB(db)
 }
 
 func sessionCleanupLoop(db *sql.DB, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 
-	cleanExpiredSessions(db) // Clean up on startup
-
+	cleanExpiredSessions(db)
 	defer ticker.Stop()
 	for range ticker.C {
 		fmt.Println("loop")
@@ -55,10 +57,11 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/", h.LandingHandler)
 	mux.HandleFunc("/projects", h.ProjectsHandler)
-	mux.HandleFunc("/blogs", h.BlogsHandler)
+	mux.HandleFunc("/blogs", middlewares.OptionalAuthMiddleware(h.BlogsHandler))
 	mux.HandleFunc("/blogs/", h.BlogDetailsHandler)
 	mux.HandleFunc("/about", h.AboutHandler)
 	mux.HandleFunc("/secret-admin-page-pls-dont-hack-me", h.LoginHandler)
+	mux.HandleFunc("/dashboard", middlewares.AuthMiddleware(h.AdminDashboardHandler))
 
 	fmt.Println("Server listening on port 5050")
 	err := http.ListenAndServe(":5050", mux)

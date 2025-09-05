@@ -7,12 +7,6 @@ import (
 	"time"
 )
 
-var db *sql.DB
-
-func SetDB(database *sql.DB) {
-	db = database
-}
-
 type Blog struct {
 	Id        string
 	Title     string

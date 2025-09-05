@@ -23,7 +23,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		username := r.FormValue("username")
 		pw := []byte(r.FormValue("password"))
-
 		user, err := models.GetUser(username)
 		if err != nil {
 			http.Redirect(w, r, "/secret-admin-page-pls-dont-hack-me?error=invalid_credentials", http.StatusSeeOther)
@@ -31,7 +30,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		valid := utils.CheckPassword([]byte(user.Password), pw)
-
 		if !valid {
 			http.Redirect(w, r, "/secret-admin-page-pls-dont-hack-me?error=invalid_credentials", http.StatusSeeOther)
 			return
@@ -50,6 +48,9 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteStrictMode,
 			Expires:  time.Now().Add(8 * time.Hour),
 		})
+		if user.IsAdmin {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		}
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }

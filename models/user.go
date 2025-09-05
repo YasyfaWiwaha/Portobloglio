@@ -41,3 +41,33 @@ func GenerateSessionToken(username string) (string, error) {
 	}
 	return token, nil
 }
+
+func ValidateSession(token string) (*User, error) {
+	var username string
+
+	// Check if session exists and is not expired
+	err := db.QueryRow(
+		`SELECT username FROM sessions 
+         WHERE token = ? AND expired_at > CURRENT_TIMESTAMP`,
+		token).Scan(&username)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("invalid session")
+		}
+		return nil, fmt.Errorf("session validation failed: %w", err)
+	}
+
+	// Get the full user details
+	user, err := GetUser(username)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	return &user, nil
+}
+
+func DeleteSession(token string) error {
+	_, err := db.Exec(`DELETE FROM sessions WHERE token = ?`, token)
+	return err
+}

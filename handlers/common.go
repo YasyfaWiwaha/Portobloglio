@@ -42,6 +42,6 @@ func (h *Handler) LandingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AboutHandler(w http.ResponseWriter, r *http.Request) {
-	data := newPageData("", nil)
+	data := newPageData("about", nil)
 	RenderTemplate(w, "about.html", data)
 }

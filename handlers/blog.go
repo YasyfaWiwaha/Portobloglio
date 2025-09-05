@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"html/template"
 
+	"portobloglio/middlewares"
 	"portobloglio/models"
 
 	"github.com/yuin/goldmark"
@@ -17,6 +19,12 @@ func (h *Handler) BlogsHandler(w http.ResponseWriter, r *http.Request) {
 	blogs, err := models.GetAllBlogs(h.DB)
 	if err != nil {
 		http.Error(w, "Failed to load blogs", http.StatusInternalServerError)
+		return
+	}
+
+	user := middlewares.GetUserFromContext(r)
+	if user != nil {
+		fmt.Println(user.Username)
 	}
 	data := newPageData("blogs", blogs)
 	RenderTemplate(w, "blogs", data)
@@ -48,7 +56,7 @@ func (h *Handler) BlogDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := newPageData("blog_details", view)
-	RenderTemplate(w, "blog-details", data)
+	RenderTemplate(w, "blog_details", data)
 }
 
 func parseMarkDown(source string) (template.HTML, error) {
