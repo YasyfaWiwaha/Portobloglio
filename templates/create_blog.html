@@ -1,0 +1,161 @@
+{{ define "create_blog" }}
+{{ template "base_head" . }}
+  <title>Create New Blog Post</title>
+  </head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Create New Blog Post</h1>
+            <p>Write your blog post using Markdown. You can preview your changes in the Preview tab.</p>
+        </header>
+
+        <form hx-post="/blog/create" hx-encoding="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label" for="title">Title</label>
+                <input type="text" id="title" name="title" class="form-input" placeholder="Enter your blog post title" required>
+                <div class="form-description">A clear, descriptive title for your blog post</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="category">Category</label>
+                <select id="category" name="category" class="form-input" required>
+                    {{ range .Content.Categories }}
+                    <option value="">Select a category</option>
+                    <option value="{{.Category}}"> {{.Category}} </option>
+                    {{ end }}
+                </select>
+                <div class="form-description">Choose the most relevant category for your post</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="tag-section">
+                    <!-- Tag input form -->
+                    <div class="tag-input-form">
+                        <input type="text" 
+                               id="tag-input" 
+                               placeholder="Add a tag and press Enter"
+                               hx-post="/blog/add-tag" 
+                               hx-trigger="keyup[keyCode==13]"
+                               hx-target="#tag-list"
+                               hx-swap="beforeend"
+                               hx-include="#tag-input"
+                               class="form-input">
+                        <button type="button" 
+                                hx-post="/blog/add-tag" 
+                                hx-target="#tag-list"
+                                hx-swap="beforeend"
+                                hx-include="#tag-input"
+                                class="btn btn-secondary btn-small">Add Tag</button>
+                    </div>
+                    
+                    <!-- Tags display area -->
+                    <div id="tag-list" class="tag-list">
+                        <!-- Tags will be added here dynamically -->
+                    </div>
+                </div>
+                <div class="form-description">Add relevant tags to help categorize your post</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <div class="editor-container">
+                    <!-- Editor tabs -->
+                    <div class="editor-tabs">
+                        <button type="button" 
+                                class="editor-tab active" 
+                                hx-get="/blog/editor/write" 
+                                hx-target="#editor-content"
+                                hx-include="#content"
+                                onclick="setActiveTab(this)">Write</button>
+                        <button type="button" 
+                                class="editor-tab" 
+                                hx-post="/blog/editor/preview" 
+                                hx-target="#editor-content"
+                                hx-include="#content"
+                                onclick="setActiveTab(this)">Preview</button>
+                    </div>
+                    
+                    <!-- Markdown toolbar -->
+                    <div class="toolbar">
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('**', '**', 'bold text')" title="Bold">**Bold**</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('*', '*', 'italic text')" title="Italic">*Italic*</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('`', '`', 'code')" title="Code">`Code`</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('```\n', '\n```', 'code block')" title="Code Block">```Code```</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('[', '](url)', 'link text')" title="Link">[Link](url)</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('![', '](image-url)', 'alt text')" title="Image">![Image](url)</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('- ', '', 'list item')" title="List">- List</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('1. ', '', 'list item')" title="Numbered List">1. List</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('# ', '', 'heading')" title="Heading"># Heading</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('> ', '', 'quote')" title="Quote">> Quote</button>
+                        <button type="button" class="toolbar-btn" onclick="insertTable()" title="Table">| Table |</button>
+                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('\n---\n', '', '')" title="Horizontal Rule">---</button>
+                    </div>
+
+                    <!-- Editor content area -->
+                    <div id="editor-content" class="editor-content">
+                        <textarea 
+                            class="markdown-editor" 
+                            id="content" 
+                            name="content"
+                            required></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Publish Blog Post</button>
+                <button type="button" 
+                        class="btn btn-secondary"
+                        hx-post="/blog/draft"
+                        hx-include="form">Save as Draft</button>
+                <button type="button" 
+                        class="btn btn-secondary"
+                        onclick="window.location.href='/blog'">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Minimal JavaScript for UI interactions that don't need server calls -->
+    <script>
+        function setActiveTab(button) {
+            document.querySelectorAll('.editor-tab').forEach(tab => tab.classList.remove('active'));
+            button.classList.add('active');
+        }
+
+        function insertMarkdown(before, after, placeholder) {
+            const textarea = document.getElementById('content');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const replacement = before + (selectedText || placeholder) + after;
+            
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            textarea.focus();
+            
+            if (selectedText) {
+                textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+            } else {
+                textarea.setSelectionRange(start + before.length, start + before.length + placeholder.length);
+            }
+        }
+
+        function insertTable() {
+            const table = `| Column 1 | Column 2 | Column 3 |
+            |----------|----------|----------|
+            | Row 1    | Data     | More     |
+            | Row 2    | Data     | More     |`;
+            insertMarkdown('', '', table);
+        }
+
+        // Clear tag input after adding
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.pathInfo.requestPath === '/blog/add-tag') {
+                document.getElementById('tag-input').value = '';
+            }
+        });
+    </script>
+
+{{ template "base_footer" . }}
+
+{{ end }}

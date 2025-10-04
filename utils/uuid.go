@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 )
 
 func FormatUUID(b []byte) (string, error) {
@@ -30,4 +33,29 @@ func ParseUUID(uuidStr string) ([]byte, error) {
 	}
 
 	return bytes, nil
+}
+
+func GenerateUUIDv7() (dbBlob []byte, structID string, err error) {
+	dbBlob = make([]byte, 16)
+
+	timestamp := time.Now().UnixMilli()
+	binary.BigEndian.PutUint64(dbBlob[0:8], uint64(timestamp))
+	copy(dbBlob[0:6], dbBlob[2:8])
+	_, err = rand.Read(dbBlob[6:])
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate random bytes: %w", err)
+	}
+	// Set version 7 in byte 6 (bits 4-7)
+	dbBlob[6] = (dbBlob[6] & 0x0f) | 0x70
+
+	// Set variant bits in byte 8 (bits 6-7 = 10)
+	dbBlob[8] = (dbBlob[8] & 0x3f) | 0x80
+
+	// Format as string for struct
+	structID, err = FormatUUID(dbBlob)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to format UUID: %w", err)
+	}
+
+	return dbBlob, structID, nil
 }

@@ -5,7 +5,11 @@
 </head>
 
 <body>
-  {{ range .Content }}
+  {{ if .Content.User}}
+    <h3> Hello {{ .Content.User.Username }} </h3>
+    <a href="/blogs/create" class="button">Create a blog</a>
+  {{ end }}
+  {{ range .Content.Blogs }}
   <div class="blog-entry">
     <a href="/blogs/{{ .Id }}">{{ .Title }}</a>
   </div>

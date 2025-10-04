@@ -37,6 +37,7 @@ func newPageData(pageCssPath string, content any) models.PageData {
 }
 
 func (h *Handler) LandingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("WHY!")
 	data := newPageData("index", nil)
 	RenderTemplate(w, "index.html", data)
 }

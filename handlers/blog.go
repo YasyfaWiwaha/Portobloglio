@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"html/template"
 
@@ -21,17 +19,18 @@ func (h *Handler) BlogsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to load blogs", http.StatusInternalServerError)
 		return
 	}
-
+	var data any
 	user := middlewares.GetUserFromContext(r)
-	if user != nil {
-		fmt.Println(user.Username)
-	}
-	data := newPageData("blogs", blogs)
+	data = newPageData("blogs", map[string]any{
+		"Blogs": blogs,
+		"User":  user,
+	})
+
 	RenderTemplate(w, "blogs", data)
 }
 
 func (h *Handler) BlogDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/blogs/")
+	id := r.PathValue("id")
 	if id == "" {
 		http.Redirect(w, r, "/blogs", http.StatusFound)
 		return
@@ -57,6 +56,19 @@ func (h *Handler) BlogDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := newPageData("blog_details", view)
 	RenderTemplate(w, "blog_details", data)
+}
+
+func (h *Handler) BlogCreateFormHandler(w http.ResponseWriter, r *http.Request) {
+	data := newPageData("create_blog", nil)
+	RenderTemplate(w, "create_blog", data)
+}
+
+func (h *Handler) BlogCreateHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
 }
 
 func parseMarkDown(source string) (template.HTML, error) {
